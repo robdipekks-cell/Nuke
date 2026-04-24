@@ -2,7 +2,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 local Window = Fluent:CreateWindow({
     Title = "Nuke Your City",
-    SubTitle = "By Oorb (another banger)",
+    SubTitle = "By Oorbits (another banger)",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = false,
@@ -13,6 +13,7 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
     Crates = Window:AddTab({ Title = "Crates", Icon = "package" }),
+    Advanced = Window:AddTab({ Title = "Advanced", Icon = "lock" }),
     Rebirth = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" })
 }
 
