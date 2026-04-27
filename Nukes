@@ -11,16 +11,17 @@ local Window = Fluent:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Crates = Window:AddTab({ Title = "Crates", Icon = "package" }),
-    Advanced = Window:AddTab({ Title = "Advanced", Icon = "lock" }),
-    Rebirth = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" })
+    Main     = Window:AddTab({ Title = "Main",    Icon = "home" }),
+    Crates   = Window:AddTab({ Title = "Crates",  Icon = "package" }),
+    Advanced = Window:AddTab({ Title = "Advanced",Icon = "lock" }),
+    Rebirth  = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" }),
+    Private  = Window:AddTab({ Title = "Private",  Icon = "lock" })
 }
 
-local Options = Fluent.Options
-local Players = game:GetService("Players")
+local Options          = Fluent.Options
+local Players          = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer      = Players.LocalPlayer
 
 local function getMyBase()
     local playerBases = workspace:WaitForChild("PlayerBases")
@@ -42,7 +43,10 @@ local function fireBuyButton(path)
     end
 end
 
--- MAIN TAB
+-- ─────────────────────────────────────────
+--  MAIN TAB
+-- ─────────────────────────────────────────
+
 Tabs.Main:AddToggle("AutoClick", {Title = "Auto Click", Default = false}):OnChanged(function()
     task.spawn(function()
         while Options.AutoClick.Value do
@@ -62,28 +66,28 @@ Tabs.Main:AddToggle("AutoBuy", {Title = "Auto Buy", Default = false}):OnChanged(
             local myBase = getMyBase()
             if myBase then
                 local buyRem = ReplicatedStorage.Remotes.Base.BuyMachine
-                buyRem:FireServer("Auto Dropper") task.wait(1)
-                buyRem:FireServer("Explosives Fountain") task.wait(1)
-                buyRem:FireServer("Fuse Machine") task.wait(1)
+                buyRem:FireServer("Auto Dropper")            task.wait(1)
+                buyRem:FireServer("Explosives Fountain")     task.wait(1)
+                buyRem:FireServer("Fuse Machine")            task.wait(1)
                 fireBuyButton(myBase.Base.PlotExpansions:FindFirstChild("1")) task.wait(1)
-                buyRem:FireServer("Nuclear Dropper") task.wait(1)
+                buyRem:FireServer("Nuclear Dropper")         task.wait(1)
                 fireBuyButton(myBase.Base.Unlockables:FindFirstChild("Rebirth Statue")) task.wait(1)
-                buyRem:FireServer("Poison Dropper") task.wait(1)
+                buyRem:FireServer("Poison Dropper")          task.wait(1)
                 fireBuyButton(myBase.Base.PlotExpansions:FindFirstChild("2")) task.wait(1)
-                buyRem:FireServer("Plasma Dropper") task.wait(1)
+                buyRem:FireServer("Plasma Dropper")          task.wait(1)
             end
             task.wait(1)
         end
     end)
 end)
 
-Tabs.Main:AddInput("UpgradeAmount", {Title = "Upgrade Amount", Default = "1", Numeric = true})
+Tabs.Main:AddInput("UpgradeAmount", {Title = "Upgrade Amount", Default = "1"})
 Tabs.Main:AddToggle("AutoUpgrade", {Title = "Auto Upgrade", Default = false}):OnChanged(function()
     task.spawn(function()
         local machines = {"Manual Dropper", "Auto Dropper", "Explosives Fountain", "Nuclear Dropper", "Poison Dropper", "Plasma Dropper"}
         while Options.AutoUpgrade.Value do
             local myBase = getMyBase()
-            local amt = tonumber(Options.UpgradeAmount.Value) or 1
+            local amt    = tonumber(Options.UpgradeAmount.Value) or 1
             if myBase then
                 for _, mName in ipairs(machines) do
                     local mach = myBase.Base.Machines:FindFirstChild(mName)
@@ -116,9 +120,12 @@ Tabs.Main:AddToggle("AutoLaunch", {Title = "Auto Launch Nuke", Default = false})
     end)
 end)
 
--- CRATES TAB
+-- ─────────────────────────────────────────
+--  CRATES TAB
+-- ─────────────────────────────────────────
+
 Tabs.Crates:AddDropdown("SelectedCrate", {Title = "Pick Crate", Values = {"GenericCrate", "FutureCrate"}, Default = "GenericCrate"})
-Tabs.Crates:AddInput("CrateAmount", {Title = "Buy Amount", Default = "1", Numeric = true})
+Tabs.Crates:AddInput("CrateAmount", {Title = "Buy Amount", Default = "1"})
 Tabs.Crates:AddToggle("AutoCrate", {Title = "Auto Buy Crate", Default = false}):OnChanged(function()
     task.spawn(function()
         while Options.AutoCrate.Value do
@@ -128,54 +135,137 @@ Tabs.Crates:AddToggle("AutoCrate", {Title = "Auto Buy Crate", Default = false}):
     end)
 end)
 
--- ADVANCED TAB (UNCAPPED)
+-- ─────────────────────────────────────────
+--  ADVANCED TAB
+-- ─────────────────────────────────────────
+
+--[[
+    Dupe Money logic:
+    - Gets current level from LevelLabel
+    - If level >= 10000: fires positive 3 times, negative 7 times
+    - If level >= 2:     uses level as value, 10 negatives + 20 positives
+    - Otherwise:         3 negatives + 10 positives with value 1
+--]]
+-- Dupe Money — pick which machine to run on
+Tabs.Advanced:AddDropdown("DupeMachinePick", {
+    Title   = "Dupe Money - Select Machine",
+    Values  = {"Manual Dropper", "Auto Dropper", "Explosives Fountain", "Fuse Machine", "Nuclear Dropper", "Plasma Dropper", "Poison Dropper"},
+    Default = "Manual Dropper",
+})
+
 Tabs.Advanced:AddToggle("DupeMoney", {Title = "Dupe Money", Default = false}):OnChanged(function()
     task.spawn(function()
         while Options.DupeMoney.Value do
             local myBase = getMyBase()
             if not myBase then break end
-            local sign = myBase.Base.Machines["Manual Dropper"].Signs.LevelSign.Display.SurfaceGui.Display
-            local cur = tonumber(string.match(sign.LevelLabel.Text, "%d+")) or 0
-            
-            local n, p, v = 3, 10, 1
-            if cur >= 2 then v = cur n, p = 10, 20 end
-            
-            for i = 1, n do 
-                if not Options.DupeMoney.Value then break end
-                ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(sign.Options.LevelUpButton, -v) 
-                task.wait(0.05) 
-            end
-            for i = 1, p do 
-                if not Options.DupeMoney.Value then break end
-                ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(sign.Options.LevelUpButton, v) 
-                task.wait(0.05) 
-            end
+            local machineName = Options.DupeMachinePick.Value
+            local machine = myBase.Base.Machines:FindFirstChild(machineName)
+            if not machine then task.wait(0.5) continue end
+            local sign = machine.Signs.LevelSign.Display.SurfaceGui.Display
+            local cur  = tonumber(string.match(sign.LevelLabel.Text, "%d+")) or 0
+            local btn  = sign.Options.LevelUpButton
+
+                if cur >= 3000 then
+                    pcall(function()
+                        ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur)
+                    end)
+                    task.wait(0.05)
+                elseif cur >= 10000 then
+                    for i = 1, 3 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, cur) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 7 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur) end)
+                        task.wait(0.05)
+                    end
+                elseif cur >= 2 then
+                    for i = 1, 10 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 20 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, cur) end)
+                        task.wait(0.05)
+                    end
+                else
+                    for i = 1, 3 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -1) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 10 do
+                        if not Options.DupeMoney.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, 1) end)
+                        task.wait(0.05)
+                    end
+                end
             task.wait(0.5)
         end
     end)
 end)
 
-Tabs.Advanced:AddToggle("DupeMoneyV2", {Title = "Dupe Money V2 (Nuclear)", Default = false}):OnChanged(function()
+-- Inf Upgrade — pick which machine, same dupe logic + reset at 3000
+Tabs.Advanced:AddDropdown("InfUpgradeMachinePick", {
+    Title   = "Inf Upgrade - Select Machine",
+    Values  = {"Manual Dropper", "Auto Dropper", "Explosives Fountain", "Fuse Machine", "Nuclear Dropper", "Plasma Dropper", "Poison Dropper"},
+    Default = "Manual Dropper",
+})
+
+Tabs.Advanced:AddToggle("InfUpgrade", {Title = "Inf Upgrade", Default = false}):OnChanged(function()
     task.spawn(function()
-        while Options.DupeMoneyV2.Value do
+        while Options.InfUpgrade.Value do
             local myBase = getMyBase()
-            local nuke = myBase and myBase.Base.Machines:FindFirstChild("Nuclear Dropper")
-            if nuke then
-                local sign = nuke.Signs.LevelSign.Display.SurfaceGui.Display
-                local cur = tonumber(string.match(sign.LevelLabel.Text, "%d+")) or 0
-                
-                local n, p, v = 3, 10, 100
-                if cur >= 2 then v = cur n, p = 10, 20 end
-                
-                for i = 1, n do 
-                    if not Options.DupeMoneyV2.Value then break end
-                    ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(sign.Options.LevelUpButton, -v) 
-                    task.wait(0.05) 
-                end
-                for i = 1, p do 
-                    if not Options.DupeMoneyV2.Value then break end
-                    ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(sign.Options.LevelUpButton, v) 
-                    task.wait(0.05) 
+            if myBase then
+                local machineName = Options.InfUpgradeMachinePick.Value
+                local machine = myBase.Base.Machines:FindFirstChild(machineName)
+                if not machine then task.wait(0.5) continue end
+                local sign = machine.Signs.LevelSign.Display.SurfaceGui.Display
+                local cur  = tonumber(string.match(sign.LevelLabel.Text, "%d+")) or 0
+                local btn  = sign.Options.LevelUpButton
+
+                if cur >= 3000 then
+                    pcall(function()
+                        ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur)
+                    end)
+                    task.wait(0.05)
+                elseif cur >= 10000 then
+                    for i = 1, 3 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, cur) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 7 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur) end)
+                        task.wait(0.05)
+                    end
+                elseif cur >= 2 then
+                    for i = 1, 10 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -cur) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 20 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, cur) end)
+                        task.wait(0.05)
+                    end
+                else
+                    for i = 1, 3 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -1) end)
+                        task.wait(0.05)
+                    end
+                    for i = 1, 10 do
+                        if not Options.InfUpgrade.Value then break end
+                        pcall(function() ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, 1) end)
+                        task.wait(0.05)
+                    end
                 end
             end
             task.wait(0.5)
@@ -183,29 +273,62 @@ Tabs.Advanced:AddToggle("DupeMoneyV2", {Title = "Dupe Money V2 (Nuclear)", Defau
     end)
 end)
 
-Tabs.Advanced:AddParagraph({Title = "Gamepass Purchase", Content = "Buy special crates automatically."})
-Tabs.Advanced:AddDropdown("SelectedGPCrate", {Title = "Pick Gamepass Crate", Values = {"BrainrotCrate", "ArmyCrate"}, Default = "BrainrotCrate"})
-Tabs.Advanced:AddInput("GPAmount", {Title = "Amount", Default = "1", Numeric = true})
-Tabs.Advanced:AddToggle("AutoGPBuy", {Title = "Auto Buy (Gamepass Crate)", Default = false}):OnChanged(function()
+-- Auto Upgrade: fires upgrade buttons on selected machine (or all)
+Tabs.Advanced:AddDropdown("AutoUpgradeMachinePick", {
+    Title   = "Auto Upgrade - Select Machine",
+    Values  = {"All", "Manual Dropper", "Auto Dropper", "Explosives Fountain", "Fuse Machine", "Nuclear Dropper", "Plasma Dropper", "Poison Dropper"},
+    Default = "All",
+})
+
+Tabs.Advanced:AddToggle("AutoUpgradeDupe", {Title = "Auto Upgrade", Default = false}):OnChanged(function()
     task.spawn(function()
-        while Options.AutoGPBuy.Value do
-            ReplicatedStorage.Remotes.Crates.BuyCrate:FireServer(Options.SelectedGPCrate.Value, tonumber(Options.GPAmount.Value) or 1)
+        while Options.AutoUpgradeDupe.Value do
+            local myBase = getMyBase()
+            if myBase then
+                local machines = myBase.Base:FindFirstChild("Machines")
+                if machines then
+                    local pick = Options.AutoUpgradeMachinePick.Value
+
+                    local function upgradeOne(machine)
+                        local upgradeButtons = machine:FindFirstChild("Signs")
+                            and machine.Signs:FindFirstChild("UpgradesSign")
+                            and machine.Signs.UpgradesSign:FindFirstChild("Display")
+                            and machine.Signs.UpgradesSign.Display:FindFirstChild("SurfaceGui")
+                            and machine.Signs.UpgradesSign.Display.SurfaceGui:FindFirstChild("Display")
+                            and machine.Signs.UpgradesSign.Display.SurfaceGui.Display:FindFirstChild("UpgradeButtons")
+
+                        if upgradeButtons then
+                            for _, btn in ipairs(upgradeButtons:GetChildren()) do
+                                if not Options.AutoUpgradeDupe.Value then break end
+                                pcall(function()
+                                    ReplicatedStorage.Remotes.Base.InteractBaseButton:FireServer(btn)
+                                end)
+                                task.wait(0.2)
+                            end
+                        end
+                    end
+
+                    if pick == "All" then
+                        for _, machine in ipairs(machines:GetChildren()) do
+                            if not Options.AutoUpgradeDupe.Value then break end
+                            upgradeOne(machine)
+                        end
+                    else
+                        local machine = machines:FindFirstChild(pick)
+                        if machine then upgradeOne(machine) end
+                    end
+                end
+            end
             task.wait(0.5)
         end
     end)
 end)
 
-Tabs.Advanced:AddInput("TokenAmount", {Title = "Token Amount (Exploit)", Default = "1", Numeric = true})
-Tabs.Advanced:AddToggle("InfTokens", {Title = "Inf Tokens Toggle", Default = false}):OnChanged(function()
-    task.spawn(function()
-        while Options.InfTokens.Value do
-            ReplicatedStorage.Remotes.Crates.BuyCrate:FireServer("GenericCrate", -math.abs(tonumber(Options.TokenAmount.Value) or 1))
-            task.wait(0.2)
-        end
-    end)
-end)
+-- ─────────────────────────────────────────
+--  REBIRTH TAB
 
--- REBIRTH TAB
+-- ─────────────────────────────────────────
+
 Tabs.Rebirth:AddToggle("AutoRebirth", {Title = "Auto Rebirth", Default = false}):OnChanged(function()
     task.spawn(function()
         while Options.AutoRebirth.Value do
@@ -215,4 +338,33 @@ Tabs.Rebirth:AddToggle("AutoRebirth", {Title = "Auto Rebirth", Default = false})
     end)
 end)
 
+-- ─────────────────────────────────────────
+-- ─────────────────────────────────────────
+--  PRIVATE TAB
+-- ─────────────────────────────────────────
+
+local infMoneyAmount = 1
+
+Tabs.Private:AddInput("InfMoneyAmount", {
+    Title    = "Amount (One time use every rebirth)",
+    Default  = "1",
+    Callback = function(v)
+        infMoneyAmount = math.abs(tonumber(v) or 1)
+    end
+})
+
+Tabs.Private:AddButton({
+    Title    = "Inf Money",
+    Callback = function()
+        local myBase = getMyBase()
+        if not myBase then return end
+        local btn = myBase.Base.Machines["Manual Dropper"]
+            .Signs.LevelSign.Display.SurfaceGui.Display.Options.LevelUpButton
+        pcall(function()
+            ReplicatedStorage.Remotes.Base.LevelUpMachine:FireServer(btn, -infMoneyAmount)
+        end)
+    end
+})
+
+-- ─────────────────────────────────────────
 Window:SelectTab(1)
