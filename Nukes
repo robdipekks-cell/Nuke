@@ -14,8 +14,7 @@ local Tabs = {
     Main     = Window:AddTab({ Title = "Main",    Icon = "home" }),
     Crates   = Window:AddTab({ Title = "Crates",  Icon = "package" }),
     Advanced = Window:AddTab({ Title = "Advanced",Icon = "lock" }),
-    Rebirth  = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" }),
-    Private  = Window:AddTab({ Title = "Private",  Icon = "lock" })
+    Rebirth  = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" })
 }
 
 local Options          = Fluent.Options
