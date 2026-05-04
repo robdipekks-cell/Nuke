@@ -18,7 +18,7 @@ local Tabs = {
     Advanced = Window:AddTab({ Title = "Advanced",Icon = "lock" }),
     Rebirth  = Window:AddTab({ Title = "Rebirth", Icon = "refresh-cw" }),
     Totems   = Window:AddTab({ Title = "Totems",  Icon = "flame" }), -- Added Totems Tab
-    Private  = Window:AddTab({ Title = "Private", Icon = "key" })    -- Fixed: Added Private Tab
+    Private  = Window:AddTab({ Title = "Private", Icon = "key" }),   -- Fixed: Added Private Tab
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
